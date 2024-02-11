@@ -2,11 +2,6 @@ package edu.brown.cs.student.main.server;
 
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Moshi;
-import edu.brown.cs.student.main.csv.CsvParser;
-import edu.brown.cs.student.main.csv.creatorfromrow.CreatorFromRow;
-import edu.brown.cs.student.main.csv.creatorfromrow.ParsedObject;
-import java.io.FileReader;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,19 +13,18 @@ public class ViewCsvHandler implements Route {
 
   private Map<String, List<List<String>>> csvFile;
 
-  public ViewCsvHandler() {
-
-  }
+  public ViewCsvHandler() {}
 
   @Override
   public Object handle(Request request, Response response) throws Exception {
     try {
-      //String filename = request.queryParams("csvFile");
-
-      this.csvFile = getLoadedCsv();
+      // String filename = request.queryParams("csvFile");
+      LoadCsvHandler handler = new LoadCsvHandler();
+      this.csvFile = handler.getLoadedCsv();
 
       Map<String, Object> responseMap = new HashMap<>();
-      responseMap.put(filename, this.loadedCsv);
+      String firstKey = this.csvFile.keySet().iterator().next();
+      responseMap.put(firstKey, this.csvFile.get(firstKey));
 
       if (!responseMap.isEmpty()) {
         return new FileSuccessResponse(responseMap).serialize();
@@ -42,13 +36,6 @@ public class ViewCsvHandler implements Route {
       System.out.println("error" + e);
       return new SoupNoRecipesFailureResponse().serialize();
     }
-  }
-
-  public List<List<String>> getLoadedCsv() {
-    if (this.loadedCsv == null) {
-      this.unmodifiableParsedObject = Collections.unmodifiableList(this.loadedCsv);
-    }
-    return this.unmodifiableParsedObject;
   }
 
   /** Response object to send, containing a soup with certain ingredients in it */
@@ -90,5 +77,3 @@ public class ViewCsvHandler implements Route {
     }
   }
 }
-
-

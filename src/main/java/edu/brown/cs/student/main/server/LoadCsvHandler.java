@@ -23,6 +23,7 @@ public class LoadCsvHandler implements Route {
 
   public LoadCsvHandler() {
     this.MY_PARSED_OBJECT = new ParsedObject();
+    this.loadedCsv = new HashMap<>();
   }
 
   @Override
@@ -36,10 +37,10 @@ public class LoadCsvHandler implements Route {
 
       Map<String, Object> responseMap = new HashMap<>();
       responseMap.put(filename, loadedFile);
-      this.loadedCsv.put(filename, loadedFile)
+      this.loadedCsv.put(filename, loadedFile);
 
       if (!responseMap.isEmpty()) {
-        return new FileSuccessResponse(responseMap).serialize();
+        return new FileSuccessResponse().serialize();
       } else {
         System.out.println("oh no");
         return new FileNotFoundFailureResponse().serialize();
@@ -58,9 +59,9 @@ public class LoadCsvHandler implements Route {
   }
 
   /** Response object to send when the file is loaded successfully */
-  public record FileSuccessResponse(String response_type, Map<String, Object> responseMap) {
-    public FileSuccessResponse(Map<String, Object> responseMap) {
-      this("success", responseMap);
+  public record FileSuccessResponse(String response_type) {
+    public FileSuccessResponse() {
+      this("Your file was loaded successfully!");
     }
     /**
      * @return this response, serialized as Json

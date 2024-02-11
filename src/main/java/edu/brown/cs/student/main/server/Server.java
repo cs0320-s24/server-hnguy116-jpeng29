@@ -54,8 +54,8 @@ public class Server {
     Spark.get("loadcsv", loadHandler);
     try {
       Spark.get("viewcsv", viewHandler);
-    } catch (NullPointerException) {
-      //display error message to user
+    } catch (NullPointerException e) {
+      // display error message to user
     }
     //    Spark.get("activity", new ActivityHandler());
     Spark.init();
