@@ -50,8 +50,13 @@ public class Server {
     //    // Setting up the handler for the GET /order and /activity endpoints
     // CreatorFromRow<List<List<String>>> creator = new ParsedObject();
     LoadCsvHandler loadHandler = new LoadCsvHandler();
+    ViewCsvHandler viewHandler = new ViewCsvHandler();
     Spark.get("loadcsv", loadHandler);
-    Spark.get("viewcsv", )
+    try {
+      Spark.get("viewcsv", viewHandler);
+    } catch (NullPointerException) {
+      //display error message to user
+    }
     //    Spark.get("activity", new ActivityHandler());
     Spark.init();
     Spark.awaitInitialization();
