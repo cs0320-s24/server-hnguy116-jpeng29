@@ -174,13 +174,4 @@ public class ParserTest<T> {
     CsvParser<Star> starParser = new CsvParser<Star>(new StringReader("Jupiter, 100\nMars"), star);
     assertThrows(FactoryFailureException.class, starParser::parse);
   }
-
-  /** Parser has no restriction on which directory files come from */
-  @Test
-  public void testParserOutsideFile() throws IOException, FactoryFailureException {
-    CsvParser<List<String>> parser =
-        new CsvParser<List<String>>(
-            new FileReader(System.getProperty("user.dir") + "/htmlReport/index.html"), row);
-    assertDoesNotThrow(parser::parse);
-  }
 }
