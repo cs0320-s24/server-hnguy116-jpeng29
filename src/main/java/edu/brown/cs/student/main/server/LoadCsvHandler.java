@@ -2,8 +2,10 @@ package edu.brown.cs.student.main.server;
 
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Moshi;
-import edu.brown.cs.student.main.soup.Soup;
-import java.nio.file.Path;
+import edu.brown.cs.student.main.csv.CsvParser;
+import edu.brown.cs.student.main.csv.creatorfromrow.CreatorFromRow;
+import edu.brown.cs.student.main.csv.creatorfromrow.ParsedObject;
+import java.io.FileReader;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,35 +15,43 @@ import spark.Route;
 
 public class LoadCsvHandler implements Route {
 
-  private Path myFilepath;
+  private List<List<String>> loadedCsv;
+  private static CsvParser<List<String>> MY_PARSER;
+  private static CreatorFromRow<List<String>> MY_PARSED_OBJECT;
 
-  public LoadCsvHandler(Path filepath){
-      myFilepath = filepath;
+  public LoadCsvHandler() {
+    this.MY_PARSED_OBJECT = new ParsedObject();
   }
 
   @Override
   public Object handle(Request request, Response response) throws Exception {
-    String filename = request.queryParams("soupName");
-    // Initialize a map for our informative response.
-    Map<String, Object> responseMap = new HashMap<>();
-    // Iterate through the soups in the menu and return the first one
-    for (Soup soup : this.menu) {
-      responseMap.put(soup.getSoupName(), soup);
-      responseMap.put("Number of ingredients", soup.getIngredients().size());
-      return new SoupSuccessResponse(responseMap).serialize();
+    try {
+      String filename = request.queryParams("csvFile");
+
+      FileReader fileReader = new FileReader(filename);
+      this.MY_PARSER = new CsvParser(fileReader, this.MY_PARSED_OBJECT);
+      this.loadedCsv = this.MY_PARSER.parse();
+
+      Map<String, Object> responseMap = new HashMap<>();
+      responseMap.put(filename, this.loadedCsv);
+
+      if (!responseMap.isEmpty()) {
+        return new FileSuccessResponse(responseMap).serialize();
+      } else {
+        System.out.println("oh no");
+        return new SoupNoRecipesFailureResponse().serialize();
+      }
+    } catch (Exception e) {
+      System.out.println("error" + e);
+      return new SoupNoRecipesFailureResponse().serialize();
     }
-    return new SoupNoRecipesFailureResponse().serialize();
   }
 
-  /*
-   * Ultimately up to you how you want to structure your success and failure responses, but they
-   * should be distinguishable in some form! We show one form here and another form in ActivityHandler
-   * and you are also free to do your own way!
-   */
+
 
   /** Response object to send, containing a soup with certain ingredients in it */
-  public record SoupSuccessResponse(String response_type, Map<String, Object> responseMap) {
-    public SoupSuccessResponse(Map<String, Object> responseMap) {
+  public record FileSuccessResponse(String response_type, Map<String, Object> responseMap) {
+    public FileSuccessResponse(Map<String, Object> responseMap) {
       this("success", responseMap);
     }
     /**
@@ -51,7 +61,7 @@ public class LoadCsvHandler implements Route {
       try {
         // Initialize Moshi which takes in this class and returns it as JSON!
         Moshi moshi = new Moshi.Builder().build();
-        JsonAdapter<SoupSuccessResponse> adapter = moshi.adapter(SoupSuccessResponse.class);
+        JsonAdapter<FileSuccessResponse> adapter = moshi.adapter(FileSuccessResponse.class);
         return adapter.toJson(this);
       } catch (Exception e) {
         // For debugging purposes, show in the console _why_ this fails
@@ -77,5 +87,4 @@ public class LoadCsvHandler implements Route {
       return moshi.adapter(SoupNoRecipesFailureResponse.class).toJson(this);
     }
   }
-
 }

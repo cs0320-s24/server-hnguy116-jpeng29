@@ -8,7 +8,7 @@ public class Server {
   // TODO 0: Read through this class and determine the shape of this project...
   // What are the endpoints that we can access... What happens if you go to them?
   public static void main(String[] args) {
-    int port = 3232;
+    int port = 4343;
     Spark.port(port);
     /*
        Setting CORS headers to allow cross-origin requests from the client; this is necessary for the client to
@@ -48,11 +48,15 @@ public class Server {
     //    }
     //
     //    // Setting up the handler for the GET /order and /activity endpoints
-    //    Spark.get("order", new OrderHandler(menu));
+    // CreatorFromRow<List<List<String>>> creator = new ParsedObject();
+    LoadCsvHandler loadHandler = new LoadCsvHandler();
+    Spark.get("loadcsv", loadHandler);
+    Spark.get("viewcsv", )
     //    Spark.get("activity", new ActivityHandler());
-    //    Spark.init();
-    //    Spark.awaitInitialization();
+    Spark.init();
+    Spark.awaitInitialization();
 
+    // census/dol_ri_earnings_disparity.csv
     // Notice this link alone leads to a 404... Why is that?
     System.out.println("Server started at http://localhost:" + port);
   }
