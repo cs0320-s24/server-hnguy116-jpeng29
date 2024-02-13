@@ -10,6 +10,10 @@ import spark.*;
 public class LoadCsvHandler implements Route {
 
   private Map<String, List<List<String>>> loadedCsv;
+
+  // test
+  private Map<String, List<List<String>>> internalLoadedCsv;
+
   private static CsvParser<List<String>> MY_PARSER;
   private static CreatorFromRow<List<String>> MY_PARSED_OBJECT;
   // private Map<String, List<List<String>>> unmodifiableParsedObject;
@@ -17,6 +21,7 @@ public class LoadCsvHandler implements Route {
   public LoadCsvHandler(Map<String, List<List<String>>> csvFile) {
     this.MY_PARSED_OBJECT = new ParsedObject();
     this.loadedCsv = csvFile;
+    this.internalLoadedCsv = new HashMap<>();
   }
 
   @Override
@@ -30,6 +35,7 @@ public class LoadCsvHandler implements Route {
 
       Map<String, Object> responseMap = new HashMap<>();
       responseMap.put(filename, loadedFile);
+
       this.loadedCsv.put(filename, loadedFile);
 
       if (!responseMap.isEmpty()) {
@@ -47,7 +53,8 @@ public class LoadCsvHandler implements Route {
 
   public void loadCsv() {
     if (!this.loadedCsv.isEmpty()) {
-      this.loadedCsv = Collections.unmodifiableMap(this.loadedCsv);
+      this.internalLoadedCsv = Collections.unmodifiableMap(this.loadedCsv);
+      this.loadedCsv = new HashMap<>(this.internalLoadedCsv);
     }
   }
 
