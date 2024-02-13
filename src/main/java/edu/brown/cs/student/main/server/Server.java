@@ -2,14 +2,19 @@ package edu.brown.cs.student.main.server;
 
 import static spark.Spark.after;
 
+import java.util.*;
 import spark.Spark;
 
 public class Server {
-  // TODO 0: Read through this class and determine the shape of this project...
-  // What are the endpoints that we can access... What happens if you go to them?
-  public static void main(String[] args) {
-    int port = 4343;
+
+  private final Map<String, List<List<String>>> loadedCsv;
+  private final int port = 5555;
+
+  public Server(Map<String, List<List<String>>> loadedCsv) {
+    this.loadedCsv = loadedCsv;
+
     Spark.port(port);
+
     /*
        Setting CORS headers to allow cross-origin requests from the client; this is necessary for the client to
        be able to make requests to the server.
@@ -32,7 +37,6 @@ public class Server {
           response.header("Access-Control-Allow-Origin", "*");
           response.header("Access-Control-Allow-Methods", "*");
         });
-
     // Sets up data needed for the OrderHandler. You will likely not read from local
     // JSON in this sprint.
     // String menuAsJson = SoupAPIUtilities.readInJson("data/menu.json");
@@ -49,20 +53,20 @@ public class Server {
     //
     //    // Setting up the handler for the GET /order and /activity endpoints
     // CreatorFromRow<List<List<String>>> creator = new ParsedObject();
-    LoadCsvHandler loadHandler = new LoadCsvHandler();
-    ViewCsvHandler viewHandler = new ViewCsvHandler();
-    Spark.get("loadcsv", loadHandler);
+
+    Spark.get("loadcsv", new LoadCsvHandler(this.loadedCsv));
     try {
-      Spark.get("viewcsv", viewHandler);
+      Spark.get("viewcsv", new ViewCsvHandler(this.loadedCsv));
     } catch (NullPointerException e) {
       // display error message to user
     }
-    //    Spark.get("activity", new ActivityHandler());
+
     Spark.init();
     Spark.awaitInitialization();
+  }
 
-    // census/dol_ri_earnings_disparity.csv
-    // Notice this link alone leads to a 404... Why is that?
-    System.out.println("Server started at http://localhost:" + port);
+  public static void main(String[] args) {
+    Server server = new Server(new HashMap<>());
+    System.out.println("Server started at http://localhost:" + server.port);
   }
 }
