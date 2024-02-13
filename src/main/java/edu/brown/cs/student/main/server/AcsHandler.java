@@ -13,23 +13,18 @@ import spark.Request;
 import spark.Response;
 import spark.Route;
 
+// retrieve the percentage of households with broadband access for a target location
+// //by providing the name of the target state and county in my request
+
+// the response should include the date and time that all data was retrieved from the ACS API by
+// your API server, as well as the state and county names your server received.
+
 public class AcsHandler implements Route {
   @Override
   public Object handle(Request request, Response response) {
-    // If you are interested in how parameters are received, try commenting out and
-    // printing these lines! Notice that requesting a specific parameter requires that parameter
-    // to be fulfilled.
-    // If you specify a queryParam, you can access it by appending ?parameterName=name to the
-    // endpoint
-    // ex. http://localhost:3232/activity?participants=num
-    Set<String> params = request.queryParams();
-    //     System.out.println(params);
     String county = request.queryParams("county");
     String state = request.queryParams("state");
 
-    //     System.out.println(participants);
-
-    // Creates a hashmap to store the results of the request
     Map<String, Object> responseMap = new HashMap<>();
     try {
       // Sends a request to the API and receives JSON back

@@ -3,7 +3,6 @@ package edu.brown.cs.student.main.server;
 import com.squareup.moshi.*;
 import edu.brown.cs.student.main.csv.creatorfromrow.CreatorFromRow;
 import java.util.*;
-import org.eclipse.jetty.http.BadMessageException;
 import spark.*;
 
 public class SearchCsvHandler implements Route {
@@ -19,18 +18,18 @@ public class SearchCsvHandler implements Route {
   public Object handle(Request request, Response response) throws Exception {
     try {
       String header = request.queryParams("header");
-      String target = null;
+      String target = request.queryParams("target");
       String columnIndexString = request.queryParams("columnIndex");
       Integer columnIndex = null;
       if (columnIndexString != null) {
         columnIndex = Integer.parseInt(columnIndexString);
       }
 
-      try {
-        target = request.queryParams("target");
-      } catch (BadMessageException e) {
-        target = request.queryParams("target");
-      }
+      //      try {
+      //         =
+      //      } catch (BadMessageException e) {
+      //        target = request.queryParams("target");
+      //      }
 
       Map<String, Object> responseMap = new HashMap<>();
       String firstKey = this.csvFile.keySet().iterator().next();
@@ -41,7 +40,6 @@ public class SearchCsvHandler implements Route {
         for (int i = 0; i < firstRow.size(); i++) {
           if (firstRow.get(i).equals(header)) {
             this.searchByColumnIndex(loadedFile, target, i, responseMap);
-            System.out.println(firstRow);
           }
         }
       } else if (columnIndex != null && target != null && !this.csvFile.isEmpty()) {
