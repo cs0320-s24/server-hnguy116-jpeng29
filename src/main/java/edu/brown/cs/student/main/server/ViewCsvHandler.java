@@ -1,30 +1,25 @@
 package edu.brown.cs.student.main.server;
 
-import com.squareup.moshi.JsonAdapter;
-import com.squareup.moshi.Moshi;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import spark.Request;
-import spark.Response;
-import spark.Route;
+import com.squareup.moshi.*;
+import java.util.*;
+import spark.*;
 
 public class ViewCsvHandler implements Route {
 
   private Map<String, List<List<String>>> csvFile;
 
-  public ViewCsvHandler() {}
+  public ViewCsvHandler(Map<String, List<List<String>>> loadedCsv) {
+    this.csvFile = loadedCsv;
+  }
 
   @Override
   public Object handle(Request request, Response response) throws Exception {
     try {
-      // String filename = request.queryParams("csvFile");
-      LoadCsvHandler handler = new LoadCsvHandler();
-      this.csvFile = handler.getLoadedCsv();
-
       Map<String, Object> responseMap = new HashMap<>();
-      String firstKey = this.csvFile.keySet().iterator().next();
-      responseMap.put(firstKey, this.csvFile.get(firstKey));
+      if (!this.csvFile.isEmpty()) {
+        String firstKey = this.csvFile.keySet().iterator().next();
+        responseMap.put(firstKey, this.csvFile.get(firstKey));
+      }
 
       if (!responseMap.isEmpty()) {
         return new FileSuccessResponse(responseMap).serialize();

@@ -1,29 +1,22 @@
 package edu.brown.cs.student.main.server;
 
-import com.squareup.moshi.JsonAdapter;
-import com.squareup.moshi.Moshi;
+import com.squareup.moshi.*;
 import edu.brown.cs.student.main.csv.CsvParser;
-import edu.brown.cs.student.main.csv.creatorfromrow.CreatorFromRow;
-import edu.brown.cs.student.main.csv.creatorfromrow.ParsedObject;
+import edu.brown.cs.student.main.csv.creatorfromrow.*;
 import java.io.FileReader;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import spark.Request;
-import spark.Response;
-import spark.Route;
+import java.util.*;
+import spark.*;
 
 public class LoadCsvHandler implements Route {
 
   private Map<String, List<List<String>>> loadedCsv;
   private static CsvParser<List<String>> MY_PARSER;
   private static CreatorFromRow<List<String>> MY_PARSED_OBJECT;
-  private Map<String, List<List<String>>> unmodifiableParsedObject;
+  // private Map<String, List<List<String>>> unmodifiableParsedObject;
 
-  public LoadCsvHandler() {
+  public LoadCsvHandler(Map<String, List<List<String>>> csvFile) {
     this.MY_PARSED_OBJECT = new ParsedObject();
-    this.loadedCsv = new HashMap<>();
+    this.loadedCsv = csvFile;
   }
 
   @Override
@@ -40,6 +33,7 @@ public class LoadCsvHandler implements Route {
       this.loadedCsv.put(filename, loadedFile);
 
       if (!responseMap.isEmpty()) {
+        this.loadCsv();
         return new FileSuccessResponse().serialize();
       } else {
         System.out.println("oh no");
@@ -51,11 +45,10 @@ public class LoadCsvHandler implements Route {
     }
   }
 
-  public Map<String, List<List<String>>> getLoadedCsv() {
-    if (this.loadedCsv == null) {
-      this.unmodifiableParsedObject = Collections.unmodifiableMap(this.loadedCsv);
+  public void loadCsv() {
+    if (!this.loadedCsv.isEmpty()) {
+      this.loadedCsv = Collections.unmodifiableMap(this.loadedCsv);
     }
-    return this.unmodifiableParsedObject;
   }
 
   /** Response object to send when the file is loaded successfully */
