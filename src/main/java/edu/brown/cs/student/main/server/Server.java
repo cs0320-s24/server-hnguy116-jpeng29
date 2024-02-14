@@ -29,6 +29,7 @@ public class Server {
     } catch (NullPointerException e) {
       //      new FileNotLoadedFailureResponse().serialize();
     }
+    Spark.get("broadband", new AcsHandler());
 
     Spark.init();
     Spark.awaitInitialization();
