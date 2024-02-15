@@ -2,6 +2,7 @@ package edu.brown.cs.student.main.server;
 
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Moshi;
+import com.squareup.moshi.Types;
 import java.io.IOException;
 import java.net.*;
 import java.net.http.*;
@@ -17,7 +18,7 @@ import spark.*;
 
 public class AcsHandler implements Route {
 
-  private StateCodes myStateCodeMap;
+  private Map<String, String> myStateCodeMap;
 
   @Override
   public Object handle(Request request, Response response) throws DatasourceException {
@@ -72,30 +73,43 @@ public class AcsHandler implements Route {
       //      responseMap.put("result", "Exception");
       //    }
       Map<String, Object> responseMap = new HashMap<>();
-      responseMap.put("hi", this.myStateCodeMap.states);
-      System.out.println(this.myStateCodeMap.states);
-      System.out.println(this.myStateCodeMap.states());
+      responseMap.put("hi", this.myStateCodeMap.get(state));
+      System.out.println(this.myStateCodeMap);
+      System.out.println(this.myStateCodeMap.get("California"));
       return new StateCodeSuccessResponse().serialize();
     } catch (Exception e) {
       return new DatasourceException("error" + e);
     }
   }
 
-  private static StateCodes retrieveStateCodes() throws DatasourceException {
+  private static Map<String, String> retrieveStateCodes() throws DatasourceException {
     try {
       URL requestURL = new URL("https://api.census.gov/data/2010/dec/sf1?get=NAME&for=state:*");
       HttpURLConnection clientConnection = connect(requestURL);
       Moshi moshi = new Moshi.Builder().build();
 
       // NOTE WELL: THE TYPES GIVEN HERE WOULD VARY ANYTIME THE RESPONSE TYPE VARIES
-      JsonAdapter<StateCodes> adapter = moshi.adapter(StateCodes.class).nonNull();
+      // JsonAdapter<StateCodes> adapter = moshi.adapter(StateCodes.class).nonNull();
+      JsonAdapter<List<List<String>>> adapter =
+          moshi.adapter(
+              Types.newParameterizedType(
+                  List.class, Types.newParameterizedType(List.class, String.class)));
+
       // NOTE: important! pattern for handling the input stream
-      StateCodes body = adapter.fromJson(new Buffer().readFrom(clientConnection.getInputStream()));
+      List<List<String>> body =
+          adapter.fromJson(new Buffer().readFrom(clientConnection.getInputStream()));
+      System.out.println(body);
       clientConnection.disconnect();
-      if (body == null || body.states() == null) {
+      if (body == null) {
         throw new DatasourceException("Malformed response from NWS");
       }
-      return body;
+      Map<String, String> stateCodeMap = new HashMap<>();
+      for (List<String> state : body) {
+        if (state.size() >= 2) { // Make sure there are at least two elements (name and code)
+          stateCodeMap.put(state.get(0), state.get(1));
+        }
+      }
+      return stateCodeMap;
     } catch (IOException e) {
       throw new DatasourceException(e.getMessage());
     }
@@ -114,6 +128,7 @@ public class AcsHandler implements Route {
   }
 
   public record StateCodes(List<List<String>> states) {}
+
   // Note: case matters! "gridID" will get populated with null, because "gridID" != "gridId"
   // public record StateCodesProperties(String gridId, String gridX, String gridY, String timeZone,
   // String radarStation) {}

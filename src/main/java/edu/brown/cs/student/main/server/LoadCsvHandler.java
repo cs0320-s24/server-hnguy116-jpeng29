@@ -27,7 +27,7 @@ public class LoadCsvHandler implements Route {
   @Override
   public Object handle(Request request, Response response) throws Exception {
     try {
-      String filename = request.queryParams("csvFile");
+      String filename = request.queryParams("filepath");
 
       FileReader fileReader = new FileReader(filename);
       this.MY_PARSER = new CsvParser(fileReader, this.MY_PARSED_OBJECT);
