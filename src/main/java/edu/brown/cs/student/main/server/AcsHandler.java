@@ -1,8 +1,6 @@
 package edu.brown.cs.student.main.server;
 
-import com.squareup.moshi.JsonAdapter;
-import com.squareup.moshi.Moshi;
-import com.squareup.moshi.Types;
+import com.squareup.moshi.*;
 import java.io.IOException;
 import java.net.*;
 import java.net.http.*;
@@ -10,102 +8,73 @@ import java.util.*;
 import okio.Buffer;
 import spark.*;
 
-// retrieve the percentage of households with broadband access for a target location
-// //by providing the name of the target state and county in my request
-
-// the response should include the date and time that all data was retrieved from the ACS API by
-// your API server, as well as the state and county names your server received.
-
 public class AcsHandler implements Route {
-
-  private Map<String, String> myStateCodeMap;
 
   @Override
   public Object handle(Request request, Response response) throws DatasourceException {
     try {
       String county = request.queryParams("county");
       String state = request.queryParams("state");
-      this.myStateCodeMap = this.retrieveStateCodes();
-      // Integer stateCode = this.myStateCodeMap.states.get(state);
-      // System.out.println(stateCode);
+      Map<String, String> myStateCodeMap = retrieveStateCodes();
+      String stateCode = myStateCodeMap.get(state);
+      Map<String, String> myCountyCodeMap = retrieveCountyCodes(myStateCodeMap.get(state));
+      String countyCode = myCountyCodeMap.get(county + ", " + state);
 
-      // System.out.println(this.retrieveStateCodes());
+      URL requestURL =
+          new URL(
+              "https://api.census.gov/data/2021/acs/acs1/subject/variables?get=NAME,S2802_C03_022E&for=county:"
+                  + countyCode
+                  + "&in=state:"
+                  + stateCode);
+      List<List<String>> body = retrieveJson(requestURL);
 
-      // get state codes once from file
-      // get state + county from user
-      // find state code from state
-      // new requestURL for county:
-      // https://api.census.gov/data/2010/dec/sf1?get=NAME&for=county:*&in=state:06
-      // new requestURL for percents
-      // return percent of households w broadband access
-      // return date and time
-
-      //    Map<String, Object> responseMap = new HashMap<>();
-      //    try {
-      //      // Sends a request to the API and receives JSON back
-      //      //String acsJson = this.sendRequest();
-      //
-      // //api.census.gov/data/2022/acs/acs1?get=NAME,group(B01001)&for=us:1&key=YOUR_KEY_GOES_HERE
-      //      URL requestURL = new
-      // URL("https://api.census.gov/data/2010/dec/sf1?get=NAME&for=state:*");
-      //      HttpURLConnection clientConnection = connect(requestURL);
-      //      Moshi moshi = new Moshi.Builder().build();
-      //
-      //      JsonAdapter<StateCodes> adapter = moshi.adapter(StateCodes.class).nonNull();
-      //      // NOTE: important! pattern for handling the input stream
-      //      StateCodes body = adapter.fromJson(new
-      // Buffer().readFrom(clientConnection.getInputStream()));
-      //      clientConnection.disconnect();
-      //      // Deserializes JSON into an Activity
-      //      // Activity activity = ActivityAPIUtilities.deserializeActivity(activityJson);
-      //      // Adds results to the responseMap
-      //      responseMap.put("result", "success");
-      //      // responseMap.put("acs", activity);
-      //      return responseMap;
-      //    } catch (Exception e) {
-      //      e.printStackTrace();
-      //      // This is a relatively unhelpful exception message. An important part of this sprint
-      // will be
-      //      // in learning to debug correctly by creating your own informative error messages
-      // where
-      // Spark
-      //      // falls short.
-      //      responseMap.put("result", "Exception");
-      //    }
       Map<String, Object> responseMap = new HashMap<>();
-      responseMap.put("hi", this.myStateCodeMap.get(state));
-      System.out.println(this.myStateCodeMap);
-      System.out.println(this.myStateCodeMap.get("California"));
-      return new StateCodeSuccessResponse().serialize();
+      for (int i = 1; i < body.size(); i++) {
+        if (body.get(i).size() >= 4) {
+          responseMap.put("Broadband Access Percentage", body.get(i).get(1));
+        }
+      }
+      String retrievalDateTime = java.time.LocalDateTime.now().toString();
+      responseMap.put("Retrieval Date & Time", retrievalDateTime);
+
+      // Add the state and county names
+      responseMap.put("state", state);
+      responseMap.put("county", county);
+
+      return new BroadbandSuccessResponse(responseMap).serialize();
+    } catch (IOException e) {
+      throw new DatasourceException(e.getMessage());
     } catch (Exception e) {
       return new DatasourceException("error" + e);
     }
   }
 
+  private static List<List<String>> retrieveJson(URL requestURL)
+      throws DatasourceException, IOException {
+    HttpURLConnection clientConnection = connect(requestURL);
+    Moshi moshi = new Moshi.Builder().build();
+
+    JsonAdapter<List<List<String>>> adapter =
+        moshi.adapter(
+            Types.newParameterizedType(
+                List.class, Types.newParameterizedType(List.class, String.class)));
+
+    List<List<String>> body =
+        adapter.fromJson(new Buffer().readFrom(clientConnection.getInputStream()));
+    clientConnection.disconnect();
+    if (body == null) {
+      throw new DatasourceException("Malformed response from NWS");
+    }
+    return body;
+  }
+
   private static Map<String, String> retrieveStateCodes() throws DatasourceException {
     try {
       URL requestURL = new URL("https://api.census.gov/data/2010/dec/sf1?get=NAME&for=state:*");
-      HttpURLConnection clientConnection = connect(requestURL);
-      Moshi moshi = new Moshi.Builder().build();
-
-      // NOTE WELL: THE TYPES GIVEN HERE WOULD VARY ANYTIME THE RESPONSE TYPE VARIES
-      // JsonAdapter<StateCodes> adapter = moshi.adapter(StateCodes.class).nonNull();
-      JsonAdapter<List<List<String>>> adapter =
-          moshi.adapter(
-              Types.newParameterizedType(
-                  List.class, Types.newParameterizedType(List.class, String.class)));
-
-      // NOTE: important! pattern for handling the input stream
-      List<List<String>> body =
-          adapter.fromJson(new Buffer().readFrom(clientConnection.getInputStream()));
-      System.out.println(body);
-      clientConnection.disconnect();
-      if (body == null) {
-        throw new DatasourceException("Malformed response from NWS");
-      }
+      List<List<String>> body = retrieveJson(requestURL);
       Map<String, String> stateCodeMap = new HashMap<>();
       for (List<String> state : body) {
-        if (state.size() >= 2) { // Make sure there are at least two elements (name and code)
+        if (state.size() >= 2) {
           stateCodeMap.put(state.get(0), state.get(1));
         }
       }
@@ -115,15 +84,36 @@ public class AcsHandler implements Route {
     }
   }
 
+  private static Map<String, String> retrieveCountyCodes(String stateCode)
+      throws DatasourceException {
+    try {
+      URL requestURL =
+          new URL(
+              "https://api.census.gov/data/2010/dec/sf1?get=NAME&for=county:*&in=state:"
+                  + stateCode);
+      List<List<String>> body = retrieveJson(requestURL);
+      Map<String, String> countyCodeMap = new HashMap<>();
+      for (List<String> county : body) {
+        if (county.size() >= 3) {
+          countyCodeMap.put(county.get(0), county.get(2));
+        }
+      }
+      return countyCodeMap;
+    } catch (IOException e) {
+      throw new DatasourceException(e.getMessage());
+    }
+  }
+
   private static HttpURLConnection connect(URL requestURL) throws DatasourceException, IOException {
     URLConnection urlConnection = requestURL.openConnection();
-    if (!(urlConnection instanceof HttpURLConnection))
+    if (!(urlConnection instanceof HttpURLConnection clientConnection)) {
       throw new DatasourceException("unexpected: result of connection wasn't HTTP");
-    HttpURLConnection clientConnection = (HttpURLConnection) urlConnection;
+    }
     clientConnection.connect(); // GET
-    if (clientConnection.getResponseCode() != 200)
+    if (clientConnection.getResponseCode() != 200) {
       throw new DatasourceException(
           "unexpected: API connection not success status " + clientConnection.getResponseMessage());
+    }
     return clientConnection;
   }
 
@@ -142,9 +132,9 @@ public class AcsHandler implements Route {
 
   public record ForecastResponseTempValue(String validTime, double value) {}
 
-  public record StateCodeSuccessResponse(String response_type) {
-    public StateCodeSuccessResponse() {
-      this("Your file was loaded successfully!");
+  public record BroadbandSuccessResponse(String response_type, Map<String, Object> responseMap) {
+    public BroadbandSuccessResponse(Map<String, Object> responseMap) {
+      this("success", responseMap);
     }
     /**
      * @return this response, serialized as Json
@@ -153,8 +143,8 @@ public class AcsHandler implements Route {
       try {
         // Initialize Moshi which takes in this class and returns it as JSON!
         Moshi moshi = new Moshi.Builder().build();
-        JsonAdapter<AcsHandler.StateCodeSuccessResponse> adapter =
-            moshi.adapter(AcsHandler.StateCodeSuccessResponse.class);
+        JsonAdapter<AcsHandler.BroadbandSuccessResponse> adapter =
+            moshi.adapter(AcsHandler.BroadbandSuccessResponse.class);
         return adapter.toJson(this);
       } catch (Exception e) {
         // For debugging purposes, show in the console _why_ this fails
