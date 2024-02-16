@@ -179,18 +179,11 @@ public class ParserTest<T> {
   @Test
   public void testParserRICity() throws IOException, FactoryFailureException {
     CsvParser<List<String>> parser =
-        new CsvParser<List<String>>(
-            new FileReader(
-                rootPath
-                    + "census/RI City & Town Income from American Community Survey 5-Year Estimates "
-                    + "Source_ US Census Bureau, 2017-2021 American Community Survey 5-Year Estimates "
-                    + "2017-2021 - Sheet1.csv"),
-            row);
+        new CsvParser<List<String>>(new FileReader(rootPath + "census/ri_city.csv"), row);
     List<List<String>> result = parser.parse();
 
     assertEquals(41, result.size());
     assertEquals("City/Town", result.get(0).get(0));
-    // assertEquals("\"39,603.00\"", result.get(1).get(3));
-    // assertEquals(List.of("9", "22", "12", "35"), result.get(1));
+    assertEquals("Per Capita Income", result.get(0).get(3));
   }
 }

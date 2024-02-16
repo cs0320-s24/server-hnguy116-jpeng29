@@ -22,16 +22,7 @@ public class TestLoadCsvHandler {
   }
 
   final Map<String, List<List<String>>> csvFile = new HashMap<>();
-
-  private final String testFile =
-      System.getProperty("user.dir") + "/data/census/income_by_race.csv";
-
-  //  private String testFile =
-  //      System.getProperty("user.dir")
-  //          + "/data/census/RI City & Town Income from American Community Survey 5-Year Estimates
-  // "
-  //          + "Source_ US Census Bureau, 2017-2021 American Community Survey 5-Year Estimates "
-  //          + "2017-2021 - Sheet1.csv";
+  private String testFile = System.getProperty("user.dir") + "/data/census/ri_city.csv";
 
   @BeforeEach
   public void setup() {
