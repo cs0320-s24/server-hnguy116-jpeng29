@@ -24,7 +24,7 @@ public class AcsHandler implements Route {
       String county = request.queryParams("county");
       String state = request.queryParams("state");
 
-      if(county == null || state == null) {
+      if (county == null || state == null) {
         response.status(400);
         return new RequestFailureResponse().serialize();
       }

@@ -2,6 +2,7 @@ package edu.brown.cs.student.main.server.csvrequests;
 
 import com.squareup.moshi.*;
 import edu.brown.cs.student.main.server.csvrequests.LoadCsvHandler.BadJsonFailureResponse;
+import edu.brown.cs.student.main.server.csvrequests.LoadCsvHandler.BadRequestFailureResponse;
 import java.util.*;
 import spark.*;
 
@@ -31,6 +32,12 @@ public class SearchCsvHandler implements Route {
       String header = request.queryParams("header");
       String target = request.queryParams("target");
       String columnIndexString = request.queryParams("columnIndex");
+
+      if (this.csvFile == null || target == null || this.csvFile.size() == 0) {
+        response.status(400);
+        return new BadRequestFailureResponse().serialize();
+      }
+
       Integer columnIndex = null;
       if (columnIndexString != null) {
         columnIndex = Integer.parseInt(columnIndexString);
@@ -63,7 +70,7 @@ public class SearchCsvHandler implements Route {
       if (!responseMap.isEmpty()) {
         return new FileSuccessResponse(responseMap).serialize();
       } else {
-        System.out.println("???");
+        System.out.println("Response map empty!");
         return new FileFailureResponse().serialize();
       }
     } catch (Exception e) {
