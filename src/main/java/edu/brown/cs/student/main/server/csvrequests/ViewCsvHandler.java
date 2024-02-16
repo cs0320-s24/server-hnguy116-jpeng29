@@ -6,16 +6,27 @@ import edu.brown.cs.student.main.server.csvrequests.LoadCsvHandler.FileNotFoundF
 import java.util.*;
 import spark.*;
 
+/** If CSV was loaded, serializes it to user. */
 public class ViewCsvHandler implements Route {
 
   private final Map<String, List<List<String>>> csvFile;
 
+  /**
+   * Constructor for ViewCsvHandler
+   *
+   * @param loadedCsv parsed file
+   */
   public ViewCsvHandler(Map<String, List<List<String>>> loadedCsv) {
     this.csvFile = loadedCsv;
   }
 
+  /**
+   * Returns a loaded CSV or a detailed error message to user.
+   *
+   * @return serialized response to user
+   */
   @Override
-  public Object handle(Request request, Response response) throws Exception {
+  public Object handle(Request request, Response response) {
     try {
       Map<String, Object> responseMap = new HashMap<>();
       if (!this.csvFile.isEmpty()) {
@@ -39,6 +50,7 @@ public class ViewCsvHandler implements Route {
     }
   }
 
+  /** Response object to send if the file is loaded and viewable. */
   public record FileSuccessResponse(String response_type, Map<String, Object> responseMap) {
     public FileSuccessResponse(Map<String, Object> responseMap) {
       this("success", responseMap);
@@ -58,6 +70,7 @@ public class ViewCsvHandler implements Route {
     }
   }
 
+  /** Response object to send if there is no CSV to view. */
   public record NoCsvFailureResponse(String response_type) {
     public NoCsvFailureResponse() {
       this("error_datasource");

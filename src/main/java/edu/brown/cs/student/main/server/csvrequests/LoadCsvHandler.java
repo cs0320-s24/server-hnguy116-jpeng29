@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.util.*;
 import spark.*;
 
-/** Loads Csv as requested by */
+/** Loads CSV through a filepath */
 public class LoadCsvHandler implements Route {
 
   private Map<String, List<List<String>>> loadedCsv;
@@ -31,10 +31,8 @@ public class LoadCsvHandler implements Route {
 
   /**
    * Reads and parses a file, returning a success or failure message to the user depending on the
-   * method's success
+   * method's success.
    *
-   * @param request
-   * @param response
    * @return serialized response to user
    */
   @Override
@@ -48,7 +46,7 @@ public class LoadCsvHandler implements Route {
 
       FileReader fileReader = new FileReader(filename);
       this.tryOpenFile(filename);
-      CsvParser<List<String>> MY_PARSER = new CsvParser<>(fileReader, MY_PARSED_OBJECT);
+      CsvParser<List<String>> MY_PARSER = new CsvParser<>(fileReader, this.MY_PARSED_OBJECT);
       List<List<String>> loadedFile = MY_PARSER.parse();
 
       Map<String, Object> responseMap = new HashMap<>();

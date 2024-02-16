@@ -1,22 +1,32 @@
 package edu.brown.cs.student.main.server.csvrequests;
 
 import com.squareup.moshi.*;
-import edu.brown.cs.student.main.csv.creatorfromrow.CreatorFromRow;
 import edu.brown.cs.student.main.server.csvrequests.LoadCsvHandler.BadJsonFailureResponse;
 import java.util.*;
 import spark.*;
 
+/** Handles searching functionality for CSV requests */
 public class SearchCsvHandler implements Route {
 
   private Map<String, List<List<String>>> csvFile;
-  private CreatorFromRow<List<String>> row;
 
+  /**
+   * Constructor for the class. Initializes csvFile with the passed in map.
+   *
+   * @param loadedCsv parsed CSV
+   */
   public SearchCsvHandler(Map<String, List<List<String>>> loadedCsv) {
     this.csvFile = loadedCsv;
   }
 
+  /**
+   * Searches through a file for a certain value; method is customizable to search with guidance
+   * (header name or column index) or to search the entire file.
+   *
+   * @return response object detailing method success/failure and matched rows
+   */
   @Override
-  public Object handle(Request request, Response response) throws Exception {
+  public Object handle(Request request, Response response) {
     try {
       String header = request.queryParams("header");
       String target = request.queryParams("target");
@@ -25,12 +35,6 @@ public class SearchCsvHandler implements Route {
       if (columnIndexString != null) {
         columnIndex = Integer.parseInt(columnIndexString);
       }
-
-      //      try {
-      //         =
-      //      } catch (BadMessageException e) {
-      //        target = request.queryParams("target");
-      //      }
 
       Map<String, Object> responseMap = new HashMap<>();
       String firstKey = this.csvFile.keySet().iterator().next();
@@ -60,14 +64,22 @@ public class SearchCsvHandler implements Route {
         return new FileSuccessResponse(responseMap).serialize();
       } else {
         System.out.println("???");
-        return new SoupNoRecipesFailureResponse().serialize();
+        return new FileFailureResponse().serialize();
       }
     } catch (Exception e) {
       System.out.println("error" + e);
-      return new SoupNoRecipesFailureResponse().serialize();
+      return new FileFailureResponse().serialize();
     }
   }
 
+  /**
+   * Searches file for target string by column index
+   *
+   * @param file to search
+   * @param toSearch target
+   * @param columnIndex
+   * @param responseMap populated with found rows
+   */
   public static void searchByColumnIndex(
       List<List<String>> file,
       String toSearch,
@@ -84,6 +96,7 @@ public class SearchCsvHandler implements Route {
     }
   }
 
+  /** Response object to send if file is searched successfully */
   public record FileSuccessResponse(String response_type, Map<String, Object> responseMap) {
     public FileSuccessResponse(Map<String, Object> responseMap) {
       this("success", responseMap);
@@ -105,15 +118,15 @@ public class SearchCsvHandler implements Route {
     }
   }
 
-  /** Response object to send if someone requested soup from an empty Menu */
-  public record SoupNoRecipesFailureResponse(String response_type) {
-    public SoupNoRecipesFailureResponse() {
+  /** Response object to send if file failed to be searched */
+  public record FileFailureResponse(String response_type) {
+    public FileFailureResponse() {
       this("No file found");
     }
 
     String serialize() {
       Moshi moshi = new Moshi.Builder().build();
-      return moshi.adapter(SoupNoRecipesFailureResponse.class).toJson(this);
+      return moshi.adapter(FileFailureResponse.class).toJson(this);
     }
   }
 }
