@@ -6,17 +6,27 @@ import java.net.*;
 import java.util.*;
 import spark.*;
 
+/**
+ * Handler class for ACS requests. Query gets target location through state and county, using the
+ * information to return the percentage of households with broadband access.
+ */
 public class AcsHandler implements Route {
 
+  /**
+   * Retrieves Broadband Access percentage and retrieval data and time
+   *
+   * @return response object detailing method success/failure and percentage data
+   * @throws DatasourceException when the method fails to retrieve
+   */
   @Override
   public Object handle(Request request, Response response) throws DatasourceException {
     try {
       String county = request.queryParams("county");
       String state = request.queryParams("state");
 
-      Map<String, String> myStateCodeMap = retrieveStateCodes();
+      Map<String, String> myStateCodeMap = this.retrieveStateCodes();
       String stateCode = myStateCodeMap.get(state);
-      Map<String, String> myCountyCodeMap = retrieveCountyCodes(myStateCodeMap.get(state));
+      Map<String, String> myCountyCodeMap = this.retrieveCountyCodes(myStateCodeMap.get(state));
       String countyCode = myCountyCodeMap.get(county + ", " + state);
 
       URL requestURL =
@@ -27,7 +37,6 @@ public class AcsHandler implements Route {
                   + stateCode);
 
       Cache cache = new Cache(Specification.SIZE, 100);
-
       List<List<String>> body = cache.get(requestURL);
 
       Map<String, Object> responseMap = new HashMap<>();
@@ -45,12 +54,20 @@ public class AcsHandler implements Route {
 
       return new BroadbandSuccessResponse(responseMap).serialize();
     } catch (IOException e) {
-      throw new DatasourceException(e.getMessage());
-    } catch (Exception e) {
-      return new DatasourceException("error" + e);
+      System.out.println("ioexception " + e.getMessage());
+      return new BroadbandFailureResponse().serialize();
+    } catch (DatasourceException e) {
+      System.out.println("data source exception " + e.getMessage());
+      return new DataSourceFailureResponse().serialize();
     }
   }
 
+  /**
+   * Retrieves state codes from the ACS API and stores it in a map
+   *
+   * @return map of states and their codes
+   * @throws DatasourceException when method fails to retrieve state codes
+   */
   private static Map<String, String> retrieveStateCodes() throws DatasourceException {
     try {
       URL requestURL = new URL("https://api.census.gov/data/2010/dec/sf1?get=NAME&for=state:*");
@@ -67,6 +84,13 @@ public class AcsHandler implements Route {
     }
   }
 
+  /**
+   * Retrieves county codes from the ACS API and stores it in a map
+   *
+   * @param stateCode target state to retrieve codes for
+   * @return county codes for the target state
+   * @throws DatasourceException when the method fails to retrieve the county codes
+   */
   private static Map<String, String> retrieveCountyCodes(String stateCode)
       throws DatasourceException {
     try {
@@ -87,6 +111,7 @@ public class AcsHandler implements Route {
     }
   }
 
+  /** Response object to send if the broadband call is a success */
   public record BroadbandSuccessResponse(String response_type, Map<String, Object> responseMap) {
     public BroadbandSuccessResponse(Map<String, Object> responseMap) {
       this("success", responseMap);
@@ -96,18 +121,42 @@ public class AcsHandler implements Route {
      */
     String serialize() {
       try {
-        // Initialize Moshi which takes in this class and returns it as JSON!
         Moshi moshi = new Moshi.Builder().build();
         JsonAdapter<AcsHandler.BroadbandSuccessResponse> adapter =
             moshi.adapter(AcsHandler.BroadbandSuccessResponse.class);
         return adapter.toJson(this);
       } catch (Exception e) {
-        // For debugging purposes, show in the console _why_ this fails
-        // Otherwise we'll just get an error 500 from the API in integration
-        // testing.
         e.printStackTrace();
         throw e;
       }
+    }
+  }
+
+  /** Response object to send if the broadband call runs into an error */
+  public record BroadbandFailureResponse(String response_type) {
+    public BroadbandFailureResponse() {
+      this("Error_datasource");
+    }
+    /**
+     * @return this response, serialized as Json
+     */
+    String serialize() {
+      Moshi moshi = new Moshi.Builder().build();
+      return moshi.adapter(BroadbandFailureResponse.class).toJson(this);
+    }
+  }
+
+  /** Response object to send if the broadband call runs into a data source error */
+  public record DataSourceFailureResponse(String response_type) {
+    public DataSourceFailureResponse() {
+      this("Error_datasource");
+    }
+    /**
+     * @return this response, serialized as Json
+     */
+    String serialize() {
+      Moshi moshi = new Moshi.Builder().build();
+      return moshi.adapter(DataSourceFailureResponse.class).toJson(this);
     }
   }
 }
