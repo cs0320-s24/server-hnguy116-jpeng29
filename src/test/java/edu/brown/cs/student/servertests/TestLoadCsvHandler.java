@@ -35,7 +35,6 @@ public class TestLoadCsvHandler {
 
   @BeforeEach
   public void setup() {
-    Spark.port(0);
     this.csvFile.clear();
     Spark.get("loadcsv", new LoadCsvHandler(csvFile));
     Spark.init();

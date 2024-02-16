@@ -2,6 +2,7 @@ package edu.brown.cs.student.main.server.csvrequests;
 
 import com.squareup.moshi.*;
 import edu.brown.cs.student.main.csv.creatorfromrow.CreatorFromRow;
+import edu.brown.cs.student.main.server.csvrequests.LoadCsvHandler.BadJsonFailureResponse;
 import java.util.*;
 import spark.*;
 
@@ -83,7 +84,6 @@ public class SearchCsvHandler implements Route {
     }
   }
 
-  /** Response object to send, containing a soup with certain ingredients in it */
   public record FileSuccessResponse(String response_type, Map<String, Object> responseMap) {
     public FileSuccessResponse(Map<String, Object> responseMap) {
       this("success", responseMap);
@@ -96,6 +96,8 @@ public class SearchCsvHandler implements Route {
         Moshi moshi = new Moshi.Builder().build();
         JsonAdapter<FileSuccessResponse> adapter = moshi.adapter(FileSuccessResponse.class);
         return adapter.toJson(this);
+      } catch (JsonDataException e) {
+        return new BadJsonFailureResponse().serialize();
       } catch (Exception e) {
         e.printStackTrace();
         throw e;
@@ -109,9 +111,6 @@ public class SearchCsvHandler implements Route {
       this("No file found");
     }
 
-    /**
-     * @return this response, serialized as Json
-     */
     String serialize() {
       Moshi moshi = new Moshi.Builder().build();
       return moshi.adapter(SoupNoRecipesFailureResponse.class).toJson(this);

@@ -3,6 +3,7 @@ package edu.brown.cs.student.main.server.csvrequests;
 import com.squareup.moshi.*;
 import edu.brown.cs.student.main.csv.CsvParser;
 import edu.brown.cs.student.main.csv.creatorfromrow.*;
+import edu.brown.cs.student.main.server.csvrequests.ViewCsvHandler.NoCsvFailureResponse;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -52,14 +53,16 @@ public class LoadCsvHandler implements Route {
 
       Map<String, Object> responseMap = new HashMap<>();
       responseMap.put(filename, loadedFile);
+      this.loadedCsv.clear();
       this.loadedCsv.put(filename, loadedFile);
 
       if (!responseMap.isEmpty()) {
         this.loadCsv();
         return new FileSuccessResponse().serialize();
       } else {
-        System.out.println("responsemap empty");
-        return new FileNotFoundFailureResponse().serialize();
+        System.out.println("empty responseMap");
+        response.status(204);
+        return new NoCsvFailureResponse().serialize();
       }
     } catch (FileNotFoundException e) {
       response.status(404);
@@ -68,7 +71,7 @@ public class LoadCsvHandler implements Route {
       response.status(403);
       return new FileSecurityFailureResponse().serialize();
     } catch (Exception e) {
-      System.out.println("exception e");
+      System.out.println("exception" + e);
       response.status(500);
       return new FileNotFoundFailureResponse().serialize();
     }
@@ -82,23 +85,19 @@ public class LoadCsvHandler implements Route {
     }
   }
 
-  public Map<String, List<List<String>>> getLoadedCsv() {
-    return this.loadedCsv;
-  }
-
   /** Response object to send when the file is loaded successfully */
   public record FileSuccessResponse(String response_type) {
     public FileSuccessResponse() {
       this("Your file was loaded successfully!");
     }
-    /**
-     * @return this response, serialized as Json
-     */
+
     String serialize() {
       try {
         Moshi moshi = new Moshi.Builder().build();
         JsonAdapter<FileSuccessResponse> adapter = moshi.adapter(FileSuccessResponse.class);
         return adapter.toJson(this);
+      } catch (JsonDataException e) {
+        return new BadJsonFailureResponse().serialize();
       } catch (Exception e) {
         e.printStackTrace();
         throw e;

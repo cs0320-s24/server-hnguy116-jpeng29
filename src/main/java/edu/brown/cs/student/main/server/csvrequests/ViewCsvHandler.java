@@ -1,6 +1,8 @@
 package edu.brown.cs.student.main.server.csvrequests;
 
 import com.squareup.moshi.*;
+import edu.brown.cs.student.main.server.csvrequests.LoadCsvHandler.BadJsonFailureResponse;
+import edu.brown.cs.student.main.server.csvrequests.LoadCsvHandler.FileNotFoundFailureResponse;
 import java.util.*;
 import spark.*;
 
@@ -18,34 +20,37 @@ public class ViewCsvHandler implements Route {
       Map<String, Object> responseMap = new HashMap<>();
       if (!this.csvFile.isEmpty()) {
         String firstKey = this.csvFile.keySet().iterator().next();
-        responseMap.put(firstKey, this.csvFile.get(firstKey));
+        List<List<String>> firstValue = this.csvFile.get(firstKey);
+        if (!firstValue.isEmpty()) {
+          responseMap.put(firstKey, this.csvFile.get(firstKey));
+        }
       }
-
       if (!responseMap.isEmpty()) {
         return new FileSuccessResponse(responseMap).serialize();
       } else {
-        System.out.println("oh no");
-        return new SoupNoRecipesFailureResponse().serialize();
+        System.out.println("nothing to view");
+        response.status(204);
+        return new NoCsvFailureResponse().serialize();
       }
     } catch (Exception e) {
       System.out.println("error" + e);
-      return new SoupNoRecipesFailureResponse().serialize();
+      response.status(500);
+      return new FileNotFoundFailureResponse().serialize();
     }
   }
 
-  /** Response object to send, containing a soup with certain ingredients in it */
   public record FileSuccessResponse(String response_type, Map<String, Object> responseMap) {
     public FileSuccessResponse(Map<String, Object> responseMap) {
       this("success", responseMap);
     }
-    /**
-     * @return this response, serialized as Json
-     */
+
     String serialize() {
       try {
         Moshi moshi = new Moshi.Builder().build();
         JsonAdapter<FileSuccessResponse> adapter = moshi.adapter(FileSuccessResponse.class);
         return adapter.toJson(this);
+      } catch (JsonDataException e) {
+        return new BadJsonFailureResponse().serialize();
       } catch (Exception e) {
         e.printStackTrace();
         throw e;
@@ -53,18 +58,14 @@ public class ViewCsvHandler implements Route {
     }
   }
 
-  /** Response object to send if someone requested soup from an empty Menu */
-  public record SoupNoRecipesFailureResponse(String response_type) {
-    public SoupNoRecipesFailureResponse() {
-      this("error");
+  public record NoCsvFailureResponse(String response_type) {
+    public NoCsvFailureResponse() {
+      this("error_datasource");
     }
 
-    /**
-     * @return this response, serialized as Json
-     */
     String serialize() {
       Moshi moshi = new Moshi.Builder().build();
-      return moshi.adapter(SoupNoRecipesFailureResponse.class).toJson(this);
+      return moshi.adapter(NoCsvFailureResponse.class).toJson(this);
     }
   }
 }

@@ -4,16 +4,23 @@ import static edu.brown.cs.student.servertests.TestLoadCsvHandler.tryRequest;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.squareup.moshi.Moshi;
-import edu.brown.cs.student.main.server.csvrequests.LoadCsvHandler;
+import edu.brown.cs.student.main.server.csvrequests.ViewCsvHandler;
 import java.io.IOException;
 import java.net.*;
 import java.util.*;
 import java.util.logging.*;
 import okio.Buffer;
 import org.junit.jupiter.api.*;
+import org.testng.annotations.BeforeClass;
 import spark.Spark;
 
 public class TestViewCsvHandler {
+
+  @BeforeClass
+  public static void setup_before_everything() {
+    Spark.port(0);
+    Logger.getLogger("").setLevel(Level.WARNING); // empty name = root logger
+  }
 
   final Map<String, List<List<String>>> csvFile = new HashMap<>();
 
@@ -30,14 +37,11 @@ public class TestViewCsvHandler {
   @BeforeEach
   public void setup() {
     this.csvFile.clear();
-    Spark.get("loadcsv", new LoadCsvHandler(csvFile));
-    Spark.init();
-    Spark.awaitInitialization();
   }
 
   @AfterEach
   public void teardown() {
-    Spark.unmap("loadcsv");
+    Spark.unmap("viewcsv");
     Spark.awaitStop();
   }
 
@@ -60,97 +64,59 @@ public class TestViewCsvHandler {
   }
 
   @Test
-  public void testLoadFile() throws IOException {
-    HttpURLConnection clientConnection = tryRequest("loadcsv?filepath=" + this.testFile);
+  public void testViewFile() throws IOException {
+    List<List<String>> nestedList = new ArrayList<>();
+    nestedList.add(Arrays.asList("a", "b", "c"));
+    nestedList.add(Arrays.asList("d", "e", "f"));
+    this.csvFile.put(this.testFile, nestedList);
+    Spark.get("viewcsv", new ViewCsvHandler(csvFile));
+    Spark.init();
+    Spark.awaitInitialization();
+    HttpURLConnection clientConnection = tryRequest("viewcsv");
     assertEquals(200, clientConnection.getResponseCode());
 
     Moshi moshi = new Moshi.Builder().build();
 
-    LoadCsvHandler.FileSuccessResponse response =
+    ViewCsvHandler.FileSuccessResponse response =
         moshi
-            .adapter(LoadCsvHandler.FileSuccessResponse.class)
+            .adapter(ViewCsvHandler.FileSuccessResponse.class)
             .fromJson(new Buffer().readFrom(clientConnection.getInputStream()));
 
     assert response != null;
-    assertEquals(response.response_type(), "Your file was loaded successfully!");
+    assertEquals(response.response_type(), "success");
+    if (response.responseMap().containsKey(this.testFile)) {
+      Object retrievedObject = response.responseMap().get(this.testFile);
+      if (retrievedObject instanceof List) {
+        List<List<String>> retrievedList = (List<List<String>>) retrievedObject;
+        assertEquals(retrievedList.get(0).get(0), "a");
+        assertEquals(retrievedList.get(0).get(1), "b");
+        assertEquals(retrievedList.get(0).get(2), "c");
+        assertEquals(retrievedList.get(1).get(0), "d");
+        assertEquals(retrievedList.get(1).get(1), "e");
+        assertEquals(retrievedList.get(1).get(2), "f");
+      }
+    }
     clientConnection.disconnect();
   }
 
   @Test
-  public void testLoadEmptyFile() throws IOException {
-    String testFile = "/Users/christinapeng/server-hnguy116-jpeng29/data/numbers/empty.csv";
-    HttpURLConnection clientConnection = tryRequest("loadcsv?filepath=" + testFile);
-    assertEquals(200, clientConnection.getResponseCode());
-
-    Moshi moshi = new Moshi.Builder().build();
-
-    LoadCsvHandler.FileSuccessResponse response =
-        moshi
-            .adapter(LoadCsvHandler.FileSuccessResponse.class)
-            .fromJson(new Buffer().readFrom(clientConnection.getInputStream()));
-
-    assert response != null;
-    assertEquals(response.response_type(), "Your file was loaded successfully!");
-
+  public void testViewEmptyFile() throws IOException {
+    this.csvFile.put(this.testFile, new ArrayList<>());
+    Spark.get("viewcsv", new ViewCsvHandler(csvFile));
+    Spark.init();
+    Spark.awaitInitialization();
+    HttpURLConnection clientConnection = tryRequest("viewcsv");
+    assertEquals(204, clientConnection.getResponseCode());
     clientConnection.disconnect();
   }
 
   @Test
-  public void testLoadRestrictedFile() {
-    String restrictedReadMe =
-        "/Users/christinapeng/server-hnguy116-jpeng29/src/test/java/edu/brown/cs/student/README";
-    HttpURLConnection clientConnection = null;
-    try {
-      clientConnection = tryRequest("loadcsv?filepath=" + restrictedReadMe);
-      assertEquals(403, clientConnection.getResponseCode());
-      Moshi moshi = new Moshi.Builder().build();
-
-      LoadCsvHandler.FileSecurityFailureResponse response =
-          moshi
-              .adapter(LoadCsvHandler.FileSecurityFailureResponse.class)
-              .fromJson(new Buffer().readFrom(clientConnection.getInputStream()));
-
-      assert response != null;
-      assertEquals(response.response_type(), "Your file was loaded successfully!");
-    } catch (IOException e) {
-      assertTrue(e.getMessage().contains("403"));
-    } finally {
-      if (clientConnection != null) {
-        clientConnection.disconnect();
-      }
-    }
-  }
-
-  @Test
-  public void testLoadBadRequest() {
-    HttpURLConnection clientConnection = null;
-    try {
-      clientConnection = tryRequest("loadcsv?filepath=");
-      assertEquals(400, clientConnection.getResponseCode());
-
-    } catch (IOException e) {
-      assertTrue(e.getMessage().contains("400"));
-    } finally {
-      if (clientConnection != null) {
-        clientConnection.disconnect();
-      }
-    }
-  }
-
-  @Test
-  public void testLoadNonexistentFile() {
-    HttpURLConnection clientConnection = null;
-    try {
-      clientConnection = tryRequest("loadcsv?filepath=???");
-      assertEquals(404, clientConnection.getResponseCode());
-
-    } catch (IOException e) {
-      assertTrue(e.getMessage().contains("404"));
-    } finally {
-      if (clientConnection != null) {
-        clientConnection.disconnect();
-      }
-    }
+  public void testViewNullFile() throws IOException {
+    Spark.get("viewcsv", new ViewCsvHandler(null));
+    Spark.init();
+    Spark.awaitInitialization();
+    HttpURLConnection clientConnection = tryRequest("viewcsv");
+    assertEquals(500, clientConnection.getResponseCode());
+    clientConnection.disconnect();
   }
 }
-
