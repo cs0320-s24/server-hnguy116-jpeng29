@@ -15,6 +15,7 @@ public class Cache {
 
   /**
    * Constructor for Cache.
+   *
    * @param specification enum identifying eviction policy
    * @param amount eviction specification (time amt or size)
    */
@@ -30,6 +31,7 @@ public class Cache {
 
   /**
    * Evicts cached data based on an amount of time elapsed after it is accessed
+   *
    * @param amount time
    */
   public void timeAccessCache(int amount) {
@@ -47,6 +49,7 @@ public class Cache {
 
   /**
    * Evicts data based on a certain amount of time elapsed after it is written.
+   *
    * @param amount time
    */
   public void timeWriteCache(int amount) {
@@ -64,6 +67,7 @@ public class Cache {
 
   /**
    * Evicts data after the cache reaches a certain size
+   *
    * @param amount max size
    */
   public void sizeCache(int amount) {
@@ -79,16 +83,12 @@ public class Cache {
                 });
   }
 
-  /**
-   * Gets value associated with the URL
-   */
+  /** Gets value associated with the URL */
   public List<List<String>> get(URL url) {
     return cache.getUnchecked(url);
   }
 
-  /**
-   * Returns cache as a map
-   */
+  /** Returns cache as a map */
   public ConcurrentMap<URL, List<List<String>>> getCache() {
     return this.cache.asMap();
   }

@@ -24,6 +24,11 @@ public class AcsHandler implements Route {
       String county = request.queryParams("county");
       String state = request.queryParams("state");
 
+      if(county == null || state == null) {
+        response.status(400);
+        return new RequestFailureResponse().serialize();
+      }
+
       Map<String, String> myStateCodeMap = this.retrieveStateCodes();
       String stateCode = myStateCodeMap.get(state);
       Map<String, String> myCountyCodeMap = this.retrieveCountyCodes(myStateCodeMap.get(state));
@@ -51,13 +56,15 @@ public class AcsHandler implements Route {
       // Add the state and county names
       responseMap.put("state", state);
       responseMap.put("county", county);
-
+      response.status(200);
       return new BroadbandSuccessResponse(responseMap).serialize();
     } catch (IOException e) {
       System.out.println("ioexception " + e.getMessage());
+      response.status(500);
       return new BroadbandFailureResponse().serialize();
     } catch (DatasourceException e) {
       System.out.println("data source exception " + e.getMessage());
+      response.status(404);
       return new DataSourceFailureResponse().serialize();
     }
   }
@@ -119,7 +126,7 @@ public class AcsHandler implements Route {
     /**
      * @return this response, serialized as Json
      */
-    String serialize() {
+    private String serialize() {
       try {
         Moshi moshi = new Moshi.Builder().build();
         JsonAdapter<AcsHandler.BroadbandSuccessResponse> adapter =
@@ -135,7 +142,7 @@ public class AcsHandler implements Route {
   /** Response object to send if the broadband call runs into an error */
   public record BroadbandFailureResponse(String response_type) {
     public BroadbandFailureResponse() {
-      this("Error_datasource");
+      this("error");
     }
     /**
      * @return this response, serialized as Json
@@ -146,10 +153,24 @@ public class AcsHandler implements Route {
     }
   }
 
+  /** Response object to send if the broadband call runs into an error */
+  public record RequestFailureResponse(String response_type) {
+    public RequestFailureResponse() {
+      this("bad_request");
+    }
+    /**
+     * @return this response, serialized as Json
+     */
+    String serialize() {
+      Moshi moshi = new Moshi.Builder().build();
+      return moshi.adapter(RequestFailureResponse.class).toJson(this);
+    }
+  }
+
   /** Response object to send if the broadband call runs into a data source error */
   public record DataSourceFailureResponse(String response_type) {
     public DataSourceFailureResponse() {
-      this("Error_datasource");
+      this("error_datasource");
     }
     /**
      * @return this response, serialized as Json
