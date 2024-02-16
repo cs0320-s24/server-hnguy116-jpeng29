@@ -87,18 +87,6 @@ public class AcsHandler implements Route {
     }
   }
 
-  //  public record StateCodes(List<List<String>> states) {}
-  //
-  //  public record ForecastResponse(String id, ForecastResponseProperties properties) {}
-  //
-  //  public record ForecastResponseProperties(
-  //      String updateTime, ForecastResponseTemperature temperature) {}
-  //
-  //  public record ForecastResponseTemperature(String uom, List<ForecastResponseTempValue> values)
-  // {}
-  //
-  //  public record ForecastResponseTempValue(String validTime, double value) {}
-
   public record BroadbandSuccessResponse(String response_type, Map<String, Object> responseMap) {
     public BroadbandSuccessResponse(Map<String, Object> responseMap) {
       this("success", responseMap);
