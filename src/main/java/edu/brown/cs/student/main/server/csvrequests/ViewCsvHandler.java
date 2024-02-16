@@ -6,7 +6,7 @@ import spark.*;
 
 public class ViewCsvHandler implements Route {
 
-  private Map<String, List<List<String>>> csvFile;
+  private final Map<String, List<List<String>>> csvFile;
 
   public ViewCsvHandler(Map<String, List<List<String>>> loadedCsv) {
     this.csvFile = loadedCsv;
@@ -43,14 +43,10 @@ public class ViewCsvHandler implements Route {
      */
     String serialize() {
       try {
-        // Initialize Moshi which takes in this class and returns it as JSON!
         Moshi moshi = new Moshi.Builder().build();
         JsonAdapter<FileSuccessResponse> adapter = moshi.adapter(FileSuccessResponse.class);
         return adapter.toJson(this);
       } catch (Exception e) {
-        // For debugging purposes, show in the console _why_ this fails
-        // Otherwise we'll just get an error 500 from the API in integration
-        // testing.
         e.printStackTrace();
         throw e;
       }

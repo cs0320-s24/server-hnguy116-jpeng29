@@ -4,6 +4,7 @@ import com.squareup.moshi.*;
 import edu.brown.cs.student.main.csv.CsvParser;
 import edu.brown.cs.student.main.csv.creatorfromrow.*;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
@@ -14,7 +15,6 @@ public class LoadCsvHandler implements Route {
 
   private Map<String, List<List<String>>> loadedCsv;
   private Map<String, List<List<String>>> internalLoadedCsv;
-  private static CsvParser<List<String>> MY_PARSER;
   private static CreatorFromRow<List<String>> MY_PARSED_OBJECT;
 
   /**
@@ -23,7 +23,7 @@ public class LoadCsvHandler implements Route {
    * @param csvFile Map passed in through Server to contain parsed file
    */
   public LoadCsvHandler(Map<String, List<List<String>>> csvFile) {
-    this.MY_PARSED_OBJECT = new ParsedObject();
+    MY_PARSED_OBJECT = new ParsedObject();
     this.loadedCsv = csvFile;
     this.internalLoadedCsv = new HashMap<>();
   }
@@ -40,10 +40,15 @@ public class LoadCsvHandler implements Route {
   public Object handle(Request request, Response response) {
     try {
       String filename = request.queryParams("filepath");
-      this.tryOpenFile(filename);
+      if (filename == null || filename.isEmpty()) {
+        response.status(400);
+        return new BadRequestFailureResponse().serialize();
+      }
+
       FileReader fileReader = new FileReader(filename);
-      this.MY_PARSER = new CsvParser(fileReader, this.MY_PARSED_OBJECT);
-      List<List<String>> loadedFile = this.MY_PARSER.parse();
+      this.tryOpenFile(filename);
+      CsvParser<List<String>> MY_PARSER = new CsvParser<>(fileReader, MY_PARSED_OBJECT);
+      List<List<String>> loadedFile = MY_PARSER.parse();
 
       Map<String, Object> responseMap = new HashMap<>();
       responseMap.put(filename, loadedFile);
@@ -56,8 +61,15 @@ public class LoadCsvHandler implements Route {
         System.out.println("responsemap empty");
         return new FileNotFoundFailureResponse().serialize();
       }
+    } catch (FileNotFoundException e) {
+      response.status(404);
+      return new FileNotFoundFailureResponse().serialize();
+    } catch (SecurityException e) {
+      response.status(403);
+      return new FileSecurityFailureResponse().serialize();
     } catch (Exception e) {
       System.out.println("exception e");
+      response.status(500);
       return new FileNotFoundFailureResponse().serialize();
     }
   }
@@ -68,6 +80,10 @@ public class LoadCsvHandler implements Route {
       this.internalLoadedCsv = Collections.unmodifiableMap(this.loadedCsv);
       this.loadedCsv = new HashMap<>(this.internalLoadedCsv);
     }
+  }
+
+  public Map<String, List<List<String>>> getLoadedCsv() {
+    return this.loadedCsv;
   }
 
   /** Response object to send when the file is loaded successfully */
@@ -115,6 +131,36 @@ public class LoadCsvHandler implements Route {
     String serialize() {
       Moshi moshi = new Moshi.Builder().build();
       return moshi.adapter(FileSecurityFailureResponse.class).toJson(this);
+    }
+  }
+
+  /**
+   * Response object to send if the request was missing a needed field, or the field was ill-formed
+   */
+  public record BadRequestFailureResponse(String response_type) {
+    public BadRequestFailureResponse() {
+      this("error_bad_request");
+    }
+    /**
+     * @return this response, serialized as Json
+     */
+    String serialize() {
+      Moshi moshi = new Moshi.Builder().build();
+      return moshi.adapter(BadRequestFailureResponse.class).toJson(this);
+    }
+  }
+
+  /** Response object to send if the request is malformed */
+  public record BadJsonFailureResponse(String response_type) {
+    public BadJsonFailureResponse() {
+      this("error_bad_json");
+    }
+    /**
+     * @return this response, serialized as Json
+     */
+    String serialize() {
+      Moshi moshi = new Moshi.Builder().build();
+      return moshi.adapter(BadJsonFailureResponse.class).toJson(this);
     }
   }
 

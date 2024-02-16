@@ -1,5 +1,6 @@
 package edu.brown.cs.student.servertests;
 
+import static edu.brown.cs.student.servertests.TestLoadCsvHandler.tryRequest;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.squareup.moshi.Moshi;
@@ -10,16 +11,9 @@ import java.util.*;
 import java.util.logging.*;
 import okio.Buffer;
 import org.junit.jupiter.api.*;
-import org.testng.annotations.BeforeClass;
 import spark.Spark;
 
-public class TestLoadCsvHandler {
-
-  @BeforeClass
-  public static void setup_before_everything() {
-    Spark.port(0);
-    Logger.getLogger("").setLevel(Level.WARNING); // empty name = root logger
-  }
+public class TestViewCsvHandler {
 
   final Map<String, List<List<String>>> csvFile = new HashMap<>();
 
@@ -35,7 +29,6 @@ public class TestLoadCsvHandler {
 
   @BeforeEach
   public void setup() {
-    Spark.port(0);
     this.csvFile.clear();
     Spark.get("loadcsv", new LoadCsvHandler(csvFile));
     Spark.init();
@@ -160,3 +153,4 @@ public class TestLoadCsvHandler {
     }
   }
 }
+
