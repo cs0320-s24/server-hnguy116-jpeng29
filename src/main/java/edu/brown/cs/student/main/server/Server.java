@@ -10,15 +10,22 @@ import edu.brown.cs.student.main.server.csvrequests.ViewCsvHandler;
 import java.util.*;
 import spark.Spark;
 
+/** Main class for project Server. */
 public class Server {
 
+  // create state object to be shared through csv handlers
   private final Map<String, List<List<String>>> loadedCsv;
   private final int port = 5556;
 
+  /**
+   * Constructor for Server.
+   *
+   * @param loadedCsv state object
+   */
   public Server(Map<String, List<List<String>>> loadedCsv) {
     this.loadedCsv = loadedCsv;
 
-    Spark.port(port);
+    Spark.port(this.port);
 
     after(
         (request, response) -> {
@@ -39,16 +46,17 @@ public class Server {
     Spark.awaitInitialization();
   }
 
+  /** Main method: creates a new instance of Server and prints URL */
   public static void main(String[] args) {
     Server server = new Server(new HashMap<>());
     System.out.println("Server started at http://localhost:" + server.port);
   }
 
+  /** Response object to send if the file is not loaded */
   public record FileNotLoadedFailureResponse(String response_type) {
     public FileNotLoadedFailureResponse() {
       this("File not loaded!");
     }
-
     /**
      * @return this response, serialized as Json
      */
