@@ -1,4 +1,4 @@
-package edu.brown.cs.student.main.server;
+package edu.brown.cs.student.main.server.csvrequests;
 
 import com.squareup.moshi.*;
 import edu.brown.cs.student.main.csv.creatorfromrow.CreatorFromRow;
@@ -93,14 +93,10 @@ public class SearchCsvHandler implements Route {
      */
     String serialize() {
       try {
-        // Initialize Moshi which takes in this class and returns it as JSON!
         Moshi moshi = new Moshi.Builder().build();
         JsonAdapter<FileSuccessResponse> adapter = moshi.adapter(FileSuccessResponse.class);
         return adapter.toJson(this);
       } catch (Exception e) {
-        // For debugging purposes, show in the console _why_ this fails
-        // Otherwise we'll just get an error 500 from the API in integration
-        // testing.
         e.printStackTrace();
         throw e;
       }
@@ -110,7 +106,7 @@ public class SearchCsvHandler implements Route {
   /** Response object to send if someone requested soup from an empty Menu */
   public record SoupNoRecipesFailureResponse(String response_type) {
     public SoupNoRecipesFailureResponse() {
-      this("error");
+      this("No file found");
     }
 
     /**

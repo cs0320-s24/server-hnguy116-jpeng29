@@ -1,11 +1,9 @@
-package edu.brown.cs.student.main.server;
+package edu.brown.cs.student.main.server.acsAPI;
 
 import com.squareup.moshi.*;
 import java.io.IOException;
 import java.net.*;
-import java.net.http.*;
 import java.util.*;
-import okio.Buffer;
 import spark.*;
 
 public class AcsHandler implements Route {
@@ -15,6 +13,7 @@ public class AcsHandler implements Route {
     try {
       String county = request.queryParams("county");
       String state = request.queryParams("state");
+
       Map<String, String> myStateCodeMap = retrieveStateCodes();
       String stateCode = myStateCodeMap.get(state);
       Map<String, String> myCountyCodeMap = retrieveCountyCodes(myStateCodeMap.get(state));
@@ -26,7 +25,10 @@ public class AcsHandler implements Route {
                   + countyCode
                   + "&in=state:"
                   + stateCode);
-      List<List<String>> body = retrieveJson(requestURL);
+
+      Cache cache = new Cache(Specification.SIZE, 100);
+
+      List<List<String>> body = cache.get(requestURL);
 
       Map<String, Object> responseMap = new HashMap<>();
       for (int i = 1; i < body.size(); i++) {
@@ -49,29 +51,10 @@ public class AcsHandler implements Route {
     }
   }
 
-  private static List<List<String>> retrieveJson(URL requestURL)
-      throws DatasourceException, IOException {
-    HttpURLConnection clientConnection = connect(requestURL);
-    Moshi moshi = new Moshi.Builder().build();
-
-    JsonAdapter<List<List<String>>> adapter =
-        moshi.adapter(
-            Types.newParameterizedType(
-                List.class, Types.newParameterizedType(List.class, String.class)));
-
-    List<List<String>> body =
-        adapter.fromJson(new Buffer().readFrom(clientConnection.getInputStream()));
-    clientConnection.disconnect();
-    if (body == null) {
-      throw new DatasourceException("Malformed response from NWS");
-    }
-    return body;
-  }
-
   private static Map<String, String> retrieveStateCodes() throws DatasourceException {
     try {
       URL requestURL = new URL("https://api.census.gov/data/2010/dec/sf1?get=NAME&for=state:*");
-      List<List<String>> body = retrieveJson(requestURL);
+      List<List<String>> body = Cache.retrieveJson(requestURL);
       Map<String, String> stateCodeMap = new HashMap<>();
       for (List<String> state : body) {
         if (state.size() >= 2) {
@@ -91,7 +74,7 @@ public class AcsHandler implements Route {
           new URL(
               "https://api.census.gov/data/2010/dec/sf1?get=NAME&for=county:*&in=state:"
                   + stateCode);
-      List<List<String>> body = retrieveJson(requestURL);
+      List<List<String>> body = Cache.retrieveJson(requestURL);
       Map<String, String> countyCodeMap = new HashMap<>();
       for (List<String> county : body) {
         if (county.size() >= 3) {
@@ -104,33 +87,17 @@ public class AcsHandler implements Route {
     }
   }
 
-  private static HttpURLConnection connect(URL requestURL) throws DatasourceException, IOException {
-    URLConnection urlConnection = requestURL.openConnection();
-    if (!(urlConnection instanceof HttpURLConnection clientConnection)) {
-      throw new DatasourceException("unexpected: result of connection wasn't HTTP");
-    }
-    clientConnection.connect(); // GET
-    if (clientConnection.getResponseCode() != 200) {
-      throw new DatasourceException(
-          "unexpected: API connection not success status " + clientConnection.getResponseMessage());
-    }
-    return clientConnection;
-  }
-
-  public record StateCodes(List<List<String>> states) {}
-
-  // Note: case matters! "gridID" will get populated with null, because "gridID" != "gridId"
-  // public record StateCodesProperties(String gridId, String gridX, String gridY, String timeZone,
-  // String radarStation) {}
-
-  public record ForecastResponse(String id, ForecastResponseProperties properties) {}
-
-  public record ForecastResponseProperties(
-      String updateTime, ForecastResponseTemperature temperature) {}
-
-  public record ForecastResponseTemperature(String uom, List<ForecastResponseTempValue> values) {}
-
-  public record ForecastResponseTempValue(String validTime, double value) {}
+  //  public record StateCodes(List<List<String>> states) {}
+  //
+  //  public record ForecastResponse(String id, ForecastResponseProperties properties) {}
+  //
+  //  public record ForecastResponseProperties(
+  //      String updateTime, ForecastResponseTemperature temperature) {}
+  //
+  //  public record ForecastResponseTemperature(String uom, List<ForecastResponseTempValue> values)
+  // {}
+  //
+  //  public record ForecastResponseTempValue(String validTime, double value) {}
 
   public record BroadbandSuccessResponse(String response_type, Map<String, Object> responseMap) {
     public BroadbandSuccessResponse(Map<String, Object> responseMap) {

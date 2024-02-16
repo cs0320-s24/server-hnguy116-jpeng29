@@ -1,4 +1,4 @@
-package edu.brown.cs.student.main.server;
+package edu.brown.cs.student.main.server.csvrequests;
 
 import com.squareup.moshi.*;
 import java.util.*;

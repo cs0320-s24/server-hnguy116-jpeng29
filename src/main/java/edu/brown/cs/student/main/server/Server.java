@@ -3,6 +3,10 @@ package edu.brown.cs.student.main.server;
 import static spark.Spark.after;
 
 import com.squareup.moshi.Moshi;
+import edu.brown.cs.student.main.server.acsAPI.AcsHandler;
+import edu.brown.cs.student.main.server.csvrequests.LoadCsvHandler;
+import edu.brown.cs.student.main.server.csvrequests.SearchCsvHandler;
+import edu.brown.cs.student.main.server.csvrequests.ViewCsvHandler;
 import java.util.*;
 import spark.Spark;
 
@@ -27,7 +31,7 @@ public class Server {
       Spark.get("viewcsv", new ViewCsvHandler(this.loadedCsv));
       Spark.get("searchcsv", new SearchCsvHandler(this.loadedCsv));
     } catch (NullPointerException e) {
-      //      new FileNotLoadedFailureResponse().serialize();
+      new FileNotLoadedFailureResponse().serialize();
     }
     Spark.get("broadband", new AcsHandler());
 
