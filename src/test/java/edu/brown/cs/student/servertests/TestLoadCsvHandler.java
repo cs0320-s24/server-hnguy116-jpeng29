@@ -13,6 +13,9 @@ import org.junit.jupiter.api.*;
 import org.testng.annotations.BeforeClass;
 import spark.Spark;
 
+/**
+ * Class to test LoadCsvHandler
+ */
 public class TestLoadCsvHandler {
 
   @BeforeClass
@@ -56,6 +59,10 @@ public class TestLoadCsvHandler {
     return clientConnection;
   }
 
+  /**
+   * Tests loading a file
+   * @throws IOException
+   */
   @Test
   public void testLoadFile() throws IOException {
     HttpURLConnection clientConnection = tryRequest("loadcsv?filepath=" + this.testFile);
@@ -73,6 +80,10 @@ public class TestLoadCsvHandler {
     clientConnection.disconnect();
   }
 
+  /**
+   * Tests loading when the file is empty
+   * @throws IOException
+   */
   @Test
   public void testLoadEmptyFile() throws IOException {
     String testFile = "/Users/christinapeng/server-hnguy116-jpeng29/data/numbers/empty.csv";
@@ -92,6 +103,9 @@ public class TestLoadCsvHandler {
     clientConnection.disconnect();
   }
 
+  /**
+   * Tests loading when the user does not have access to the file
+   */
   @Test
   public void testLoadRestrictedFile() {
     String restrictedReadMe =
@@ -118,6 +132,9 @@ public class TestLoadCsvHandler {
     }
   }
 
+  /**
+   * Tests loading a file with a bad user request
+   */
   @Test
   public void testLoadBadRequest() {
     HttpURLConnection clientConnection = null;
@@ -134,6 +151,9 @@ public class TestLoadCsvHandler {
     }
   }
 
+  /**
+   * Tests loading a nonexistent file
+   */
   @Test
   public void testLoadNonexistentFile() {
     HttpURLConnection clientConnection = null;

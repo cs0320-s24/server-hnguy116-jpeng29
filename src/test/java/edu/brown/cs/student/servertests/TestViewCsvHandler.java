@@ -14,6 +14,9 @@ import org.junit.jupiter.api.*;
 import org.testng.annotations.BeforeClass;
 import spark.Spark;
 
+/**
+ * Tests View Csv Handler
+ */
 public class TestViewCsvHandler {
 
   @BeforeClass
@@ -56,6 +59,10 @@ public class TestViewCsvHandler {
     return clientConnection;
   }
 
+  /**
+   * Tests that the file is viewable
+   * @throws IOException
+   */
   @Test
   public void testViewFile() throws IOException {
     List<List<String>> nestedList = new ArrayList<>();
@@ -92,6 +99,10 @@ public class TestViewCsvHandler {
     clientConnection.disconnect();
   }
 
+  /**
+   * Tests when a user attempts to view an empty file
+   * @throws IOException
+   */
   @Test
   public void testViewEmptyFile() throws IOException {
     this.csvFile.put(this.testFile, new ArrayList<>());
@@ -103,6 +114,10 @@ public class TestViewCsvHandler {
     clientConnection.disconnect();
   }
 
+  /**
+   * Tests when a user attempts to view a null file
+   * @throws IOException
+   */
   @Test
   public void testViewNullFile() throws IOException {
     Spark.get("viewcsv", new ViewCsvHandler(null));

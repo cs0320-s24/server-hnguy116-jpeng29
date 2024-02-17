@@ -37,6 +37,7 @@ public class ViewCsvHandler implements Route {
         }
       }
       if (!responseMap.isEmpty()) {
+        response.status(200);
         return new FileSuccessResponse(responseMap).serialize();
       } else {
         System.out.println("nothing to view");

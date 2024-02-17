@@ -68,13 +68,16 @@ public class SearchCsvHandler implements Route {
       }
 
       if (!responseMap.isEmpty()) {
+        response.status(200);
         return new FileSuccessResponse(responseMap).serialize();
       } else {
         System.out.println("Response map empty!");
+        response.status(204);
         return new FileFailureResponse().serialize();
       }
     } catch (Exception e) {
       System.out.println("error" + e);
+      response.status(500);
       return new FileFailureResponse().serialize();
     }
   }

@@ -56,6 +56,7 @@ public class LoadCsvHandler implements Route {
 
       if (!responseMap.isEmpty()) {
         this.loadCsv();
+        response.status(200);
         return new FileSuccessResponse().serialize();
       } else {
         System.out.println("empty responseMap");
