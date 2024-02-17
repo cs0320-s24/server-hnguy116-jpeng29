@@ -16,8 +16,11 @@ Est. completion time: 30 hr
   api.census.gov to find the broadband access percentage.
 
 # Errors/Bugs
+- No known bugs 
 
 # Tests
+- Our program contains two testing folders: one for classes pertaining to our Parser and 
+  Searcher, and another for classes concerning Server, and each respective handler. 
 
 # How to
 - Run the program:
